@@ -1,0 +1,18 @@
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+export const config = {
+  port: process.env.PORT || 4000,
+  nodeEnv: process.env.NODE_ENV || 'development',
+  db: {
+    host: process.env.DB_HOST || '127.0.0.1',
+    port: process.env.DB_PORT ? Number(process.env.DB_PORT) : 3306,
+    user: process.env.DB_USER || 'root',
+    password: process.env.DB_PASSWORD || '',
+    database: process.env.DB_NAME || 'orphans_db',
+    connectionLimit: process.env.DB_POOL ? Number(process.env.DB_POOL) : 10,
+  },
+  jwtSecret: process.env.JWT_SECRET || 'change-me-secret',
+  uploadDir: process.env.UPLOAD_DIR || 'uploads',
+};
