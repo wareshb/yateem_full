@@ -7,11 +7,17 @@ export function formatDateForDisplay(dateString) {
     if (!dateString) return '';
 
     // إذا كان التاريخ بصيغة dd/mm/yyyy بالفعل، أرجعه كما هو
-    if (dateString.includes('/')) {
+    if (dateString.includes('/') && dateString.indexOf('/') === 2) {
         return dateString;
     }
 
-    const [year, month, day] = dateString.split('-');
+    // التعامل مع ISO Timestamp
+    let cleanDate = dateString;
+    if (dateString.includes('T')) {
+        cleanDate = dateString.split('T')[0];
+    }
+
+    const [year, month, day] = cleanDate.split('-');
     if (!year || !month || !day) return dateString;
 
     return `${day}/${month}/${year}`;

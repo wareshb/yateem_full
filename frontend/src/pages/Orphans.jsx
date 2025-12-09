@@ -379,11 +379,11 @@ export default function Orphans() {
               <DetailItem label="المحافظة" value={viewDetails.residence_province} />
               <DetailItem label="المديرية" value={viewDetails.residence_district} />
               <DetailItem label="الحي" value={viewDetails.neighborhood_or_street} />
-              <DetailItem label="الحالة" value={viewDetails.residence_condition} />
+              <DetailItem label="حالة السكن" value={viewDetails.residence_condition} />
             </DetailSection>
 
             <DetailSection title="الحالة الصحية">
-              <DetailItem label="الحالة" value={viewDetails.health_condition} />
+              <DetailItem label="الحالة الصحية" value={viewDetails.health_condition} />
               {viewDetails.illness_type && <DetailItem label="النوع" value={viewDetails.illness_type} />}
               {viewDetails.illness_notes && <DetailItem label="ملاحظات" value={viewDetails.illness_notes} />}
             </DetailSection>
