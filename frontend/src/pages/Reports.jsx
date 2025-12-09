@@ -1,4 +1,5 @@
 import { mockStats } from '../data/mock';
+import DateInput from '../components/DateInput';
 
 export default function Reports() {
   return (
@@ -31,8 +32,8 @@ export default function Reports() {
             <option>الحالات الحرجة</option>
             <option>تقرير الباحثين الاجتماعيين</option>
           </Input>
-          <Input label="من تاريخ" type="date" />
-          <Input label="إلى تاريخ" type="date" />
+          <DateInput label="من تاريخ" />
+          <DateInput label="إلى تاريخ" />
           <Input label="المحافظة" placeholder="الكل" />
         </div>
         <div style={{ marginTop: 12, display: 'flex', gap: 10 }}>

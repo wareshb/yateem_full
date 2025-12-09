@@ -1,4 +1,5 @@
 import { mockGuardians } from '../data/mock';
+import DateInput from '../components/DateInput';
 
 export default function Guardians() {
   return (
@@ -42,7 +43,7 @@ export default function Guardians() {
         </div>
         <div className="form-grid">
           <Input label="الاسم الرباعي" placeholder="مثال: محمد علي أحمد" />
-          <Input label="تاريخ الميلاد" type="date" />
+          <DateInput label="تاريخ الميلاد" />
           <Input label="رقم الهوية" placeholder="010112233" />
           <Input label="صلة القرابة" placeholder="عم / خال / جد" />
           <Input label="رقم التواصل" placeholder="77xxxxxxx" />

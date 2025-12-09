@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import DateInput from '../components/DateInput';
+import { formatDateForDisplay, formatDateForServer } from '../utils/dateUtils';
 
 const API_URL = 'http://localhost:4000/api';
 
@@ -18,7 +20,7 @@ export default function SponsorOrganizations() {
         phone: '',
         sponsorship_type: 'نقدية',
         responsible_person: '',
-        start_date: new Date().toISOString().split('T')[0],
+        start_date: formatDateForDisplay(new Date().toISOString().split('T')[0]),
         notes: ''
     });
 
@@ -62,7 +64,11 @@ export default function SponsorOrganizations() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            await axios.post(`${API_URL}/sponsor-organizations`, formData);
+            const dataToSend = {
+                ...formData,
+                start_date: formatDateForServer(formData.start_date)
+            };
+            await axios.post(`${API_URL}/sponsor-organizations`, dataToSend);
             alert('تم إضافة الجهة الكافلة بنجاح');
             setFormData({
                 name: '',
@@ -70,7 +76,7 @@ export default function SponsorOrganizations() {
                 phone: '',
                 sponsorship_type: 'نقدية',
                 responsible_person: '',
-                start_date: new Date().toISOString().split('T')[0],
+                start_date: formatDateForDisplay(new Date().toISOString().split('T')[0]),
                 notes: ''
             });
             setShowAddForm(false);
@@ -132,7 +138,7 @@ export default function SponsorOrganizations() {
                             <option value="نقدية,صحية">نقدية وصحية</option>
                         </Input>
                         <Input label="المسؤول عن قطاع الأيتام" value={formData.responsible_person} onChange={(e) => setFormData({ ...formData, responsible_person: e.target.value })} />
-                        <Input label="تاريخ بدء الكفالة" type="date" value={formData.start_date} onChange={(e) => setFormData({ ...formData, start_date: e.target.value })} />
+                        <DateInput label="تاريخ بدء الكفالة" value={formData.start_date} onChange={(e) => setFormData({ ...formData, start_date: e.target.value })} />
                         <div className="input" style={{ gridColumn: '1/-1' }}>
                             <label>ملاحظات</label>
                             <textarea value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} rows={3} />

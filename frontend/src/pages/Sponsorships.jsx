@@ -1,4 +1,5 @@
 import { mockSponsorships } from '../data/mock';
+import DateInput from '../components/DateInput';
 
 export default function Sponsorships() {
   return (
@@ -63,8 +64,8 @@ export default function Sponsorships() {
             <option>ربع سنوي</option>
             <option>سنوي</option>
           </Input>
-          <Input label="تاريخ البدء" type="date" />
-          <Input label="تاريخ الانتهاء" type="date" />
+          <DateInput label="تاريخ البدء" />
+          <DateInput label="تاريخ الانتهاء" />
           <Input label="حالة الكفالة" as="select">
             <option>نشطة</option>
             <option>متوقفة</option>
