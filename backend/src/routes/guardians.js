@@ -107,9 +107,13 @@ router.get('/:id', async (req, res, next) => {
       // Normalize fields to match guardian structure for frontend consistency
       guardian = {
         ...mother,
+        phone: mother.phone_1,
         contact_phone: mother.phone_1,
         current_occupation: mother.occupation,
-        relationship_to_child: 'Mother'
+        relationship: 'Mother',
+        relationship_to_child: 'Mother', // alias
+        health_condition: mother.health_status,
+        id_number: mother.id_number
       };
 
       orphans = await query('SELECT * FROM orphans WHERE mother_id = ? AND mother_is_custodian = 1', [req.params.id]);
@@ -118,7 +122,15 @@ router.get('/:id', async (req, res, next) => {
       // Default to external guardian
       const [g] = await query('SELECT * FROM guardians WHERE id = :id', { id: req.params.id });
       if (!g) return res.status(404).json({ message: 'Guardian not found' });
-      guardian = g;
+
+      guardian = {
+        ...g,
+        id_number: g.national_id, // frontend: id_number -> db: national_id
+        relationship: g.relationship_to_orphan, // frontend: relationship -> db: relationship_to_orphan
+        health_condition: g.health_status, // frontend: health_condition -> db: health_status
+        // phone and current_occupation match db columns per check_db_columns output?
+        // Let's verify: guardians table has 'phone' and 'current_occupation' from earlier 'DESCRIBE'
+      };
 
       orphans = await query('SELECT * FROM orphans WHERE guardian_id = ? AND mother_is_custodian = 0', [req.params.id]);
     }
@@ -136,41 +148,65 @@ router.patch('/:id', authenticate, async (req, res, next) => {
     const params = { id: req.params.id };
     const updates = [];
     let table = 'guardians';
-    let allowed = [];
+
+    // Helper to add update field if it exists in body
+    const addUpdate = (dbField, bodyValue) => {
+      if (bodyValue !== undefined) {
+        updates.push(`${dbField} = :${dbField}`);
+        params[dbField] = bodyValue;
+      }
+    };
 
     if (type === 'mother') {
       table = 'mothers';
-      // Map frontend fields (common interface) to database fields for mothers
-      // Frontend sends: full_name, phone, current_occupation...
-      // DB Mothers expects: full_name, phone_1, occupation...
+      // Map frontend fields to DB columns for mothers
+      addUpdate('full_name', body.full_name);
+      addUpdate('phone_1', body.phone); // frontend: phone -> db: phone_1
+      addUpdate('occupation', body.current_occupation); // frontend: current_occupation -> db: occupation
 
-      if (body.full_name) { updates.push('full_name = :full_name'); params.full_name = body.full_name; }
-      if (body.phone) { updates.push('phone_1 = :phone'); params.phone = body.phone; }
-      if (body.current_occupation) { updates.push('occupation = :occupation'); params.occupation = body.current_occupation; }
-      // Add other mother fields as needed
+      // New fields added by migration
+      addUpdate('date_of_birth', body.date_of_birth);
+      addUpdate('nationality', body.nationality);
+      addUpdate('address', body.address);
+      addUpdate('monthly_income', body.monthly_income);
+      addUpdate('health_status', body.health_condition || body.health_status); // Front might send health_condition
+      addUpdate('marital_status', body.marital_status);
+      addUpdate('educational_level', body.educational_level);
+      addUpdate('work_place', body.work_plane || body.work_place);
+      addUpdate('province', body.province);
+      addUpdate('district', body.district);
+      addUpdate('notes', body.notes);
 
     } else {
-      // Default Guardian
-      allowed = [
-        'full_name', 'date_of_birth', 'national_id', 'relationship_to_child',
-        'contact_phone', 'address', 'occupation', 'monthly_income', 'health_status', 'notes',
-        // Allow mapped fields from frontend if they differ
-        'phone', 'current_occupation'
-      ];
+      // Default: External Guardian
+      table = 'guardians';
 
-      // Map frontend common names to DB columns if necessary, or assume they match 
-      // In existing code, they seem to match partly. Let's ensure robust mapping.
-      if (body.full_name) { updates.push('full_name = :full_name'); params.full_name = body.full_name; }
-      if (body.phone) { updates.push('contact_phone = :phone'); params.phone = body.phone; } /* DB=contact_phone */
-      if (body.current_occupation) { updates.push('occupation = :occupation'); params.occupation = body.current_occupation; } /* DB=occupation */
-      if (body.monthly_income) { updates.push('monthly_income = :monthly_income'); params.monthly_income = body.monthly_income; }
-      // Add others...
+      // Mappings for guardians table
+      addUpdate('full_name', body.full_name);
+      addUpdate('contact_phone', body.phone); // frontend: phone -> db: contact_phone
+      addUpdate('occupation', body.current_occupation); // frontend: current_occupation -> db: occupation
+      addUpdate('relationship_to_child', body.relationship); // frontend: relationship
+      addUpdate('national_id', body.id_number); // frontend: id_number -> db: national_id
+
+      // Generic fields
+      addUpdate('date_of_birth', body.date_of_birth);
+      addUpdate('nationality', body.nationality);
+      addUpdate('address', body.address);
+      addUpdate('monthly_income', body.monthly_income);
+      addUpdate('health_status', body.health_condition || body.health_status);
+      addUpdate('marital_status', body.marital_status);
+      addUpdate('educational_level', body.educational_level);
+      addUpdate('work_place', body.work_place);
+      addUpdate('province', body.province);
+      addUpdate('district', body.district);
+      addUpdate('notes', body.notes);
     }
 
     if (!updates.length) return res.status(400).json({ message: 'No fields to update' });
 
     const sql = `UPDATE ${table} SET ${updates.join(', ')} WHERE id = :id`;
     await query(sql, params);
+
     res.json({ message: 'Updated successfully' });
   } catch (err) {
     next(err);

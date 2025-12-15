@@ -30,12 +30,46 @@ router.post('/', authenticate, async (req, res, next) => {
     }
 });
 
+// GET /api/fathers - List fathers
+router.get('/', async (req, res, next) => {
+    try {
+        const { search, limit = 20, page = 1 } = req.query;
+        let sql = `
+            SELECT 
+                f.*,
+                COUNT(o.id) as orphans_count
+            FROM fathers f
+            LEFT JOIN orphans o ON o.father_id = f.id
+            WHERE 1=1
+        `;
+
+        const params = {};
+
+        if (search) {
+            sql += ` AND f.full_name LIKE :search`;
+            params.search = `%${search}%`;
+        }
+
+        sql += ` GROUP BY f.id ORDER BY f.full_name LIMIT :limit OFFSET :offset`;
+        params.limit = parseInt(limit);
+        params.offset = (parseInt(page) - 1) * parseInt(limit);
+
+        const rows = await query(sql, params);
+        res.json(rows);
+    } catch (err) {
+        next(err);
+    }
+});
+
 // GET /api/fathers/:id - Get father details
 router.get('/:id', async (req, res, next) => {
     try {
         const [father] = await query('SELECT * FROM fathers WHERE id = :id', { id: req.params.id });
         if (!father) return res.status(404).json({ message: 'بيانات الأب غير موجودة' });
-        res.json(father);
+
+        const orphans = await query('SELECT * FROM orphans WHERE father_id = :id', { id: req.params.id });
+
+        res.json({ ...father, orphans });
     } catch (err) {
         next(err);
     }

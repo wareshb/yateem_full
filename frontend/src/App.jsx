@@ -4,6 +4,7 @@ import axios from 'axios';
 import Dashboard from './pages/dashboard';
 import { OrphansList, OrphansCreate, OrphansEdit, OrphansShow } from './pages/orphans/index';
 import { GuardiansList, GuardiansCreate, GuardiansEdit, GuardiansShow } from './pages/guardians/index';
+import { FathersList, FathersShow, FathersEdit } from './pages/fathers/index';
 import { SponsorsList, SponsorsCreate, SponsorsEdit, SponsorsShow } from './pages/sponsors';
 import { SponsorshipsList, SponsorshipsCreate, SponsorshipsEdit, SponsorshipsShow } from './pages/sponsorships';
 import { VisitsList, VisitsCreate, VisitsEdit, VisitsShow } from './pages/visits';
@@ -26,6 +27,7 @@ const navItems = [
   { path: '/', label: 'لوحة التحكم' },
   { path: '/orphans', label: 'بيانات الأيتام' },
   { path: '/guardians', label: 'المعيلين' },
+  { path: '/fathers', label: 'الآباء' },
   { path: '/sponsor-organizations', label: 'الجهات الكافلة' },
   { path: '/marketing-organizations', label: 'جهات التسويق' },
   { path: '/sponsors', label: 'كفالات قديمة' },
@@ -122,6 +124,10 @@ export default function App() {
           <Route path="/guardians" element={<PrivateRoute><Layout><GuardiansList /></Layout></PrivateRoute>} />
           <Route path="/guardians/:id" element={<PrivateRoute><Layout><GuardiansShow /></Layout></PrivateRoute>} />
           <Route path="/guardians/:id/edit" element={<PrivateRoute><Layout><GuardiansEdit /></Layout></PrivateRoute>} />
+
+          <Route path="/fathers" element={<PrivateRoute><Layout><FathersList /></Layout></PrivateRoute>} />
+          <Route path="/fathers/:id" element={<PrivateRoute><Layout><FathersShow /></Layout></PrivateRoute>} />
+          <Route path="/fathers/:id/edit" element={<PrivateRoute><Layout><FathersEdit /></Layout></PrivateRoute>} />
 
           <Route path="/sponsors" element={<PrivateRoute><Layout><SponsorsList /></Layout></PrivateRoute>} />
           <Route path="/sponsors/create" element={<PrivateRoute><Layout><SponsorsCreate /></Layout></PrivateRoute>} />

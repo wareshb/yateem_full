@@ -1,20 +1,24 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useParams, useNavigate } from 'react-router-dom';
-import { Section, Input, DateInput, Textarea } from '../../components/FormComponents';
-import { formatDateForServer, formatDateForDisplay } from '../../utils/dateUtils';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { Form, Input, Button, DatePicker, Select, InputNumber, Card, Row, Col, Divider, message, Spin } from 'antd';
+import { SaveOutlined, CloseOutlined } from '@ant-design/icons';
+import dayjs from 'dayjs';
 
+const { TextArea } = Input;
+const { Option } = Select;
 const API_URL = 'http://localhost:4000/api';
 
 export default function GuardiansEdit() {
     const { id } = useParams();
     const navigate = useNavigate();
-    const location = useLocation(); // Updated import
-    const [formData, setFormData] = useState(null);
+    const location = useLocation();
+    const [form] = Form.useForm();
     const [loading, setLoading] = useState(true);
+    const [submitting, setSubmitting] = useState(false);
 
     const searchParams = new URLSearchParams(location.search);
-    const type = searchParams.get('type') || 'guardian';
+    const type = searchParams.get('type') || 'external';
 
     useEffect(() => {
         fetchGuardian();
@@ -24,76 +28,287 @@ export default function GuardiansEdit() {
         try {
             const res = await axios.get(`${API_URL}/guardians/${id}?type=${type}`);
             const data = res.data;
-            setFormData({
+
+            // Set form values
+            form.setFieldsValue({
                 ...data,
-                date_of_birth: formatDateForDisplay(data.date_of_birth)
+                date_of_birth: data.date_of_birth ? dayjs(data.date_of_birth) : null,
+                marital_status: data.marital_status || undefined,
+                educational_level: data.educational_level || undefined,
+                health_condition: data.health_condition || data.health_status || undefined
             });
         } catch (err) {
-            alert('خطأ في تحميل البيانات');
+            message.error('خطأ في تحميل البيانات: ' + (err.response?.data?.message || err.message));
             navigate('/guardians');
         } finally {
             setLoading(false);
         }
     };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+    const handleSubmit = async (values) => {
+        setSubmitting(true);
         try {
             const dataToSend = {
-                ...formData,
-                date_of_birth: formatDateForServer(formData.date_of_birth)
+                ...values,
+                date_of_birth: values.date_of_birth ? values.date_of_birth.format('YYYY-MM-DD') : null
             };
 
             await axios.patch(`${API_URL}/guardians/${id}?type=${type}`, dataToSend);
-            alert('تم تحديث البيانات بنجاح');
+            message.success('تم تحديث البيانات بنجاح');
             navigate(`/guardians/${id}?type=${type}`);
         } catch (err) {
-            alert('خطأ: ' + (err.response?.data?.message || err.message));
+            message.error('خطأ في التحديث: ' + (err.response?.data?.message || err.message));
+        } finally {
+            setSubmitting(false);
         }
     };
 
-    if (loading) return <div>جاري التحميل...</div>;
-    if (!formData) return null;
+    if (loading) {
+        return (
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
+                <Spin size="large" tip="جاري التحميل..." />
+            </div>
+        );
+    }
 
     return (
-        <div className="grid" style={{ gap: 16 }}>
-            <div className="section-title">
-                <h2>
-                    تعديل بيانات {type === 'mother' ? 'الأم' : 'المعيل'}: {formData.full_name}
-                    <span className={`tag ${type === 'mother' ? 'blue' : 'orange'}`} style={{ marginRight: 10, fontSize: '0.8rem' }}>
-                        {type === 'mother' ? 'أم' : 'معيل'}
+        <div style={{ padding: 24, background: '#f0f2f5', minHeight: '100vh' }}>
+            <Card
+                title={
+                    <span>
+                        تعديل بيانات {type === 'mother' ? 'الأم' : 'المعيل'}
                     </span>
-                </h2>
-                <button type="button" className="button secondary" onClick={() => navigate(`/guardians/${id}?type=${type}`)}>
-                    إلغاء
-                </button>
-            </div>
+                }
+                extra={
+                    <Button
+                        icon={<CloseOutlined />}
+                        onClick={() => navigate(`/guardians/${id}?type=${type}`)}
+                    >
+                        إلغاء
+                    </Button>
+                }
+            >
+                <Form
+                    form={form}
+                    layout="vertical"
+                    onFinish={handleSubmit}
+                    autoComplete="off"
+                >
+                    <Divider orientation="right">البيانات الشخصية</Divider>
+                    <Row gutter={16}>
+                        <Col xs={24} md={12}>
+                            <Form.Item
+                                label="الاسم الرباعي"
+                                name="full_name"
+                                rules={[{ required: true, message: 'الرجاء إدخال الاسم الرباعي' }]}
+                            >
+                                <Input placeholder="الاسم الرباعي" />
+                            </Form.Item>
+                        </Col>
+                        <Col xs={24} md={12}>
+                            <Form.Item
+                                label="تاريخ الميلاد"
+                                name="date_of_birth"
+                            >
+                                <DatePicker
+                                    style={{ width: '100%' }}
+                                    format="DD/MM/YYYY"
+                                    placeholder="اختر التاريخ"
+                                />
+                            </Form.Item>
+                        </Col>
+                    </Row>
 
-            <div className="card">
-                <form onSubmit={handleSubmit}>
-                    <Section title="البيانات الشخصية">
-                        <Input label="الاسم الرباعي" value={formData.full_name} onChange={(e) => setFormData({ ...formData, full_name: e.target.value })} required />
-                        <DateInput label="تاريخ الميلاد" value={formData.date_of_birth} onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })} />
-                        <Input label="رقم الهوية" value={formData.id_number} onChange={(e) => setFormData({ ...formData, id_number: e.target.value })} />
-                        <Input label="صلة القرابة" value={formData.relationship} onChange={(e) => setFormData({ ...formData, relationship: e.target.value })} />
-                        <Input label="رقم التواصل" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} />
-                        <Input label="العنوان" value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} />
-                    </Section>
+                    <Row gutter={16}>
+                        <Col xs={24} md={12}>
+                            <Form.Item
+                                label="رقم الهوية / البطاقة الشخصية"
+                                name="id_number"
+                            >
+                                <Input placeholder="رقم الهوية" />
+                            </Form.Item>
+                        </Col>
+                        <Col xs={24} md={12}>
+                            <Form.Item
+                                label="الجنسية"
+                                name="nationality"
+                            >
+                                <Input placeholder="الجنسية" />
+                            </Form.Item>
+                        </Col>
+                    </Row>
 
-                    <Section title="البيانات المهنية والمعيشية">
-                        <Input label="المهنة" value={formData.current_occupation} onChange={(e) => setFormData({ ...formData, current_occupation: e.target.value })} />
-                        <Input label="الدخل الشهري" type="number" value={formData.monthly_income} onChange={(e) => setFormData({ ...formData, monthly_income: e.target.value })} />
-                        <Input label="الحالة الصحية" value={formData.health_condition} onChange={(e) => setFormData({ ...formData, health_condition: e.target.value })} />
-                        <Textarea label="ملاحظات" value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} />
-                    </Section>
+                    <Row gutter={16}>
+                        <Col xs={24} md={12}>
+                            <Form.Item
+                                label="صلة القرابة"
+                                name="relationship"
+                            >
+                                <Select placeholder="اختر صلة القرابة">
+                                    <Option value="Mother">الأم</Option>
+                                    <Option value="Uncle">عم</Option>
+                                    <Option value="Aunt">عمة</Option>
+                                    <Option value="Grandfather">جد</Option>
+                                    <Option value="Grandmother">جدة</Option>
+                                    <Option value="Brother">أخ</Option>
+                                    <Option value="Sister">أخت</Option>
+                                    <Option value="Other">أخرى</Option>
+                                </Select>
+                            </Form.Item>
+                        </Col>
+                        <Col xs={24} md={12}>
+                            <Form.Item
+                                label="الحالة الاجتماعية"
+                                name="marital_status"
+                            >
+                                <Select placeholder="اختر الحالة الاجتماعية">
+                                    <Option value="متزوج">متزوج</Option>
+                                    <Option value="أعزب">أعزب</Option>
+                                    <Option value="مطلق">مطلق</Option>
+                                    <Option value="أرمل">أرمل</Option>
+                                </Select>
+                            </Form.Item>
+                        </Col>
+                    </Row>
 
-                    <div style={{ gridColumn: '1/-1', marginTop: 20 }}>
-                        <button type="submit" className="button" style={{ width: '100%', padding: 16 }}>
-                            حفظ التعديلات
-                        </button>
-                    </div>
-                </form>
-            </div>
+                    <Row gutter={16}>
+                        <Col xs={24} md={12}>
+                            <Form.Item
+                                label="المستوى التعليمي"
+                                name="educational_level"
+                            >
+                                <Select placeholder="اختر المستوى التعليمي">
+                                    <Option value="أمي">أمي</Option>
+                                    <Option value="ابتدائي">ابتدائي</Option>
+                                    <Option value="إعدادي">إعدادي</Option>
+                                    <Option value="ثانوي">ثانوي</Option>
+                                    <Option value="جامعي">جامعي</Option>
+                                    <Option value="دراسات عليا">دراسات عليا</Option>
+                                </Select>
+                            </Form.Item>
+                        </Col>
+                        <Col xs={24} md={12}>
+                            <Form.Item
+                                label="رقم التواصل"
+                                name="phone"
+                            >
+                                <Input placeholder="رقم الهاتف" />
+                            </Form.Item>
+                        </Col>
+                    </Row>
+
+                    <Divider orientation="right">معلومات السكن</Divider>
+                    <Row gutter={16}>
+                        <Col xs={24} md={12}>
+                            <Form.Item
+                                label="المحافظة"
+                                name="province"
+                            >
+                                <Input placeholder="المحافظة" />
+                            </Form.Item>
+                        </Col>
+                        <Col xs={24} md={12}>
+                            <Form.Item
+                                label="المديرية"
+                                name="district"
+                            >
+                                <Input placeholder="المديرية" />
+                            </Form.Item>
+                        </Col>
+                    </Row>
+
+                    <Row gutter={16}>
+                        <Col xs={24}>
+                            <Form.Item
+                                label="العنوان التفصيلي"
+                                name="address"
+                            >
+                                <Input placeholder="الحي، الشارع، رقم المنزل" />
+                            </Form.Item>
+                        </Col>
+                    </Row>
+
+                    <Divider orientation="right">البيانات المهنية والمعيشية</Divider>
+                    <Row gutter={16}>
+                        <Col xs={24} md={12}>
+                            <Form.Item
+                                label="المهنة الحالية"
+                                name="current_occupation"
+                            >
+                                <Input placeholder="المهنة" />
+                            </Form.Item>
+                        </Col>
+                        <Col xs={24} md={12}>
+                            <Form.Item
+                                label="مكان العمل"
+                                name="work_place"
+                            >
+                                <Input placeholder="مكان العمل" />
+                            </Form.Item>
+                        </Col>
+                    </Row>
+
+                    <Row gutter={16}>
+                        <Col xs={24} md={12}>
+                            <Form.Item
+                                label="الدخل الشهري (ريال)"
+                                name="monthly_income"
+                            >
+                                <InputNumber
+                                    style={{ width: '100%' }}
+                                    placeholder="الدخل الشهري"
+                                    min={0}
+                                />
+                            </Form.Item>
+                        </Col>
+                        <Col xs={24} md={12}>
+                            <Form.Item
+                                label="الحالة الصحية"
+                                name="health_condition"
+                            >
+                                <Select placeholder="اختر الحالة الصحية">
+                                    <Option value="سليم">سليم</Option>
+                                    <Option value="مريض">مريض</Option>
+                                    <Option value="معاق">معاق</Option>
+                                    <Option value="مزمن">مرض مزمن</Option>
+                                </Select>
+                            </Form.Item>
+                        </Col>
+                    </Row>
+
+                    <Divider orientation="right">معلومات إضافية</Divider>
+                    <Row gutter={16}>
+                        <Col xs={24}>
+                            <Form.Item
+                                label="ملاحظات"
+                                name="notes"
+                            >
+                                <TextArea
+                                    rows={4}
+                                    placeholder="أي ملاحظات إضافية عن المعيل"
+                                />
+                            </Form.Item>
+                        </Col>
+                    </Row>
+
+                    <Row gutter={16}>
+                        <Col xs={24}>
+                            <Form.Item>
+                                <Button
+                                    type="primary"
+                                    htmlType="submit"
+                                    icon={<SaveOutlined />}
+                                    loading={submitting}
+                                    block
+                                    size="large"
+                                >
+                                    حفظ التعديلات
+                                </Button>
+                            </Form.Item>
+                        </Col>
+                    </Row>
+                </Form>
+            </Card>
         </div>
     );
 }

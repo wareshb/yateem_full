@@ -1,21 +1,19 @@
 import { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import {
     Descriptions,
     Card,
     Button,
-    Tag,
     Table,
     Space,
     Typography,
     Popover,
     Checkbox,
-    Row,
-    Col,
     Spin,
     Divider,
     Avatar,
+    Tag,
     Tooltip
 } from 'antd';
 import {
@@ -34,11 +32,10 @@ import dayjs from 'dayjs';
 const { Text, Title } = Typography;
 const API_URL = 'http://localhost:4000/api';
 
-export default function GuardiansShow() {
+export default function FathersShow() {
     const { id } = useParams();
     const navigate = useNavigate();
-    const location = useLocation();
-    const [guardian, setGuardian] = useState(null);
+    const [father, setFather] = useState(null);
     const [loading, setLoading] = useState(true);
 
     // Orphans Table State
@@ -47,19 +44,16 @@ export default function GuardiansShow() {
     ]);
 
     useEffect(() => {
-        fetchGuardian();
+        fetchFather();
     }, [id]);
 
-    const fetchGuardian = async () => {
+    const fetchFather = async () => {
         try {
-            const searchParams = new URLSearchParams(location.search);
-            const type = searchParams.get('type') || 'guardian';
-            const res = await axios.get(`${API_URL}/guardians/${id}?type=${type}`);
-            setGuardian(res.data);
+            const res = await axios.get(`${API_URL}/fathers/${id}`);
+            // Ensure orphans array exists even if backend returns undefined
+            setFather({ ...res.data, orphans: res.data.orphans || [] });
         } catch (err) {
             console.error(err);
-            // alert('خطأ في تحميل البيانات');
-            // navigate('/guardians'); 
         } finally {
             setLoading(false);
         }
@@ -225,9 +219,7 @@ export default function GuardiansShow() {
         );
     }
 
-    if (!guardian) return null;
-
-    const type = new URLSearchParams(location.search).get('type') || 'guardian';
+    if (!father) return null;
 
     return (
         <div style={{ padding: 24, background: '#f0f2f5', minHeight: '100vh' }}>
@@ -235,65 +227,40 @@ export default function GuardiansShow() {
             <div style={{ marginBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                     <Title level={2} style={{ margin: 0 }}>
-                        {guardian.full_name}
+                        {father.full_name}
                     </Title>
                     <Space style={{ marginTop: 8 }}>
-                        <Tag color={type === 'mother' ? 'blue' : 'orange'}>
-                            {type === 'mother' ? 'أم' : 'معيل خارجي'}
-                        </Tag>
-                        {guardian.relationship && <Tag>{guardian.relationship}</Tag>}
+                        <Tag color="cyan">أب متوفي</Tag>
                     </Space>
                 </div>
                 <Space>
                     <Button
                         icon={<ArrowRightOutlined />}
-                        onClick={() => navigate('/guardians')}
+                        onClick={() => navigate('/fathers')}
                     >
                         عودة للقائمة
                     </Button>
                     <Button
                         type="primary"
                         icon={<EditOutlined />}
-                        onClick={() => navigate(`/guardians/${id}/edit?type=${type}`)}
+                        onClick={() => navigate(`/fathers/${id}/edit`)}
                     >
                         تعديل البيانات
                     </Button>
                 </Space>
             </div>
 
-            {/* Guardian Details */}
+            {/* Father Details */}
             <Card style={{ marginBottom: 24 }} bordered={false}>
-                <Descriptions title="البيانات الشخصية" bordered column={{ xxl: 4, xl: 3, lg: 3, md: 2, sm: 1, xs: 1 }}>
-                    <Descriptions.Item label="الاسم الرباعي">{guardian.full_name || '-'}</Descriptions.Item>
-                    <Descriptions.Item label="تاريخ الميلاد">{guardian.date_of_birth ? dayjs(guardian.date_of_birth).format('DD/MM/YYYY') : '-'}</Descriptions.Item>
-                    <Descriptions.Item label="رقم الهوية">{guardian.id_number || '-'}</Descriptions.Item>
-                    <Descriptions.Item label="الجنسية">{guardian.nationality || '-'}</Descriptions.Item>
-                    <Descriptions.Item label="صلة القرابة">{guardian.relationship || '-'}</Descriptions.Item>
-                    <Descriptions.Item label="الحالة الاجتماعية">{guardian.marital_status || '-'}</Descriptions.Item>
-                    <Descriptions.Item label="المستوى التعليمي">{guardian.educational_level || '-'}</Descriptions.Item>
-                    <Descriptions.Item label="رقم التواصل">{guardian.phone || '-'}</Descriptions.Item>
+                <Descriptions title="البيانات الشخصية والوفاة" bordered column={{ xxl: 4, xl: 3, lg: 3, md: 2, sm: 1, xs: 1 }}>
+                    <Descriptions.Item label="الاسم الرباعي">{father.full_name || '-'}</Descriptions.Item>
+                    <Descriptions.Item label="تاريخ الميلاد">{father.date_of_birth ? dayjs(father.date_of_birth).format('DD/MM/YYYY') : '-'}</Descriptions.Item>
+                    <Descriptions.Item label="تاريخ الوفاة">{father.date_of_death ? dayjs(father.date_of_death).format('DD/MM/YYYY') : '-'}</Descriptions.Item>
+                    <Descriptions.Item label="سبب الوفاة">{father.cause_of_death || '-'}</Descriptions.Item>
+                    <Descriptions.Item label="نوع شهادة الوفاة">{father.death_certificate_type || '-'}</Descriptions.Item>
+                    <Descriptions.Item label="رقم شهادة الوفاة">{father.death_certificate_number || '-'}</Descriptions.Item>
+                    <Descriptions.Item label="المهنة قبل الوفاة">{father.occupation_before_death || '-'}</Descriptions.Item>
                 </Descriptions>
-
-                <Divider />
-
-                <Descriptions title="معلومات السكن والعمل" bordered column={{ xxl: 4, xl: 3, lg: 3, md: 2, sm: 1, xs: 1 }}>
-                    <Descriptions.Item label="المحافظة">{guardian.province || guardian.residence_province || '-'}</Descriptions.Item>
-                    <Descriptions.Item label="المديرية">{guardian.district || guardian.residence_district || '-'}</Descriptions.Item>
-                    <Descriptions.Item label="العنوان التفصيلي" span={2}>{guardian.address || '-'}</Descriptions.Item>
-                    <Descriptions.Item label="المهنة">{guardian.current_occupation || '-'}</Descriptions.Item>
-                    <Descriptions.Item label="الدخل الشهري">{guardian.monthly_income ? `${guardian.monthly_income} ريال` : '-'}</Descriptions.Item>
-                    <Descriptions.Item label="الحالة الصحية">{guardian.health_condition || guardian.health_status || '-'}</Descriptions.Item>
-                    <Descriptions.Item label="مكان العمل">{guardian.work_place || '-'}</Descriptions.Item>
-                </Descriptions>
-
-                {guardian.notes && (
-                    <>
-                        <Divider />
-                        <Descriptions title="ملاحظات" column={1}>
-                            <Descriptions.Item label="ملاحظات">{guardian.notes}</Descriptions.Item>
-                        </Descriptions>
-                    </>
-                )}
             </Card>
 
             {/* Orphans List */}
@@ -301,7 +268,7 @@ export default function GuardiansShow() {
                 title={
                     <Space>
                         <UserOutlined />
-                        <span style={{ marginRight: 8 }}>الأيتام التابعين ({guardian.orphans?.length || 0})</span>
+                        <span style={{ marginRight: 8 }}>الأيتام التابعين لهذا الأب ({father.orphans.length})</span>
                     </Space>
                 }
                 extra={
@@ -318,7 +285,7 @@ export default function GuardiansShow() {
             >
                 <Table
                     columns={columns}
-                    dataSource={guardian.orphans || []}
+                    dataSource={father.orphans}
                     rowKey={(record) => record.id || record._id || record.orphan_id}
                     pagination={false}
                     scroll={{ x: 'max-content' }}
