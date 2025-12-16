@@ -20,7 +20,11 @@ router.get('/', async (req, res, next) => {
         m.occupation as job,
         'mother' as type, 
         COUNT(DISTINCT o.id) as orphans_count,
-        'Mother' as relationship
+        'Mother' as relationship,
+        m.address,
+        m.monthly_income,
+        m.id_number,
+        m.nationality
       FROM mothers m 
       JOIN orphans o ON o.mother_id = m.id 
       WHERE o.mother_is_custodian = 1
@@ -35,7 +39,11 @@ router.get('/', async (req, res, next) => {
         g.current_occupation as job,
         'guardian' as type, 
         COUNT(DISTINCT o.id) as orphans_count,
-        g.relationship_to_orphan as relationship
+        g.relationship_to_orphan as relationship,
+        g.address,
+        g.monthly_income,
+        g.id_number,
+        g.nationality
       FROM guardians g 
       JOIN orphans o ON o.guardian_id = g.id 
       WHERE o.mother_is_custodian = 0

@@ -105,4 +105,29 @@ router.patch('/:id', authenticate, async (req, res, next) => {
     }
 });
 
+// DELETE /api/fathers/:id - Delete father
+router.delete('/:id', authenticate, async (req, res, next) => {
+    try {
+        const { id } = req.params;
+
+        // Check dependencies
+        const orphans = await query('SELECT id FROM orphans WHERE father_id = :id LIMIT 1', { id });
+        if (orphans.length > 0) {
+            return res.status(400).json({
+                message: 'لا يمكن حذف سجل الأب لوجود أيتام مرتبطين به'
+            });
+        }
+
+        const result = await query('DELETE FROM fathers WHERE id = :id', { id });
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: 'سجل الأب غير موجود' });
+        }
+
+        res.json({ message: 'تم حذف سجل الأب بنجاح' });
+    } catch (err) {
+        next(err);
+    }
+});
+
 export default router;
