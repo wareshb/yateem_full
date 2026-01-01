@@ -13,8 +13,9 @@ import Reports from './pages/reports';
 import { UsersList, UsersCreate, UsersEdit, UsersShow } from './pages/users';
 import Settings from './pages/settings';
 import Login from './pages/auth.login';
-import { MarketingOrganizationsList, MarketingOrganizationsCreate, MarketingOrganizationsEdit, MarketingOrganizationsShow } from './pages/marketing.organizations';
-import { SponsorOrganizationsList, SponsorOrganizationsCreate, SponsorOrganizationsEdit, SponsorOrganizationsShow } from './pages/sponsor.organizations';
+import Organizations from './pages/organizations/index';
+// import { MarketingOrganizationsList, MarketingOrganizationsCreate, MarketingOrganizationsEdit, MarketingOrganizationsShow } from './pages/marketing.organizations';
+// import { SponsorOrganizationsList, SponsorOrganizationsCreate, SponsorOrganizationsEdit, SponsorOrganizationsShow } from './pages/sponsor.organizations';
 import './App.css';
 
 // Setup axios defaults
@@ -28,8 +29,11 @@ const navItems = [
   { path: '/orphans', label: 'بيانات الأيتام' },
   { path: '/guardians', label: 'المعيلين' },
   { path: '/fathers', label: 'الآباء' },
-  { path: '/sponsor-organizations', label: 'الجهات الكافلة' },
-  { path: '/marketing-organizations', label: 'جهات التسويق' },
+  { path: '/fathers', label: 'الآباء' },
+  { path: '/organizations', label: 'الجهات' },
+  //   { path: '/sponsor-organizations', label: 'الجهات الكافلة' },
+  //   { path: '/marketing-organizations', label: 'جهات التسويق' },
+  { path: '/sponsors', label: 'كفالات قديمة' },
   { path: '/sponsors', label: 'كفالات قديمة' },
   { path: '/sponsorships', label: 'إدارة الكفالات' },
   { path: '/visits', label: 'المتابعة الميدانية' },
@@ -152,7 +156,11 @@ export default function App() {
           <Route path="/documents/:id" element={<PrivateRoute><Layout><DocumentsShow /></Layout></PrivateRoute>} />
 
           <Route path="/reports" element={<PrivateRoute><Layout><Reports /></Layout></PrivateRoute>} />
-          <Route path="/sponsor-organizations" element={<PrivateRoute><Layout><SponsorOrganizationsList /></Layout></PrivateRoute>} />
+          <Route path="/sponsor-organizations" element={<PrivateRoute><Layout><Organizations /></Layout></PrivateRoute>} />
+          <Route path="/marketing-organizations" element={<PrivateRoute><Layout><Organizations /></Layout></PrivateRoute>} />
+          <Route path="/organizations" element={<PrivateRoute><Layout><Organizations /></Layout></PrivateRoute>} />
+
+          {/* <Route path="/sponsor-organizations" element={<PrivateRoute><Layout><SponsorOrganizationsList /></Layout></PrivateRoute>} />
           <Route path="/sponsor-organizations/create" element={<PrivateRoute><Layout><SponsorOrganizationsCreate /></Layout></PrivateRoute>} />
           <Route path="/sponsor-organizations/:id" element={<PrivateRoute><Layout><SponsorOrganizationsShow /></Layout></PrivateRoute>} />
           <Route path="/sponsor-organizations/:id/edit" element={<PrivateRoute><Layout><SponsorOrganizationsEdit /></Layout></PrivateRoute>} />
@@ -160,7 +168,7 @@ export default function App() {
           <Route path="/marketing-organizations" element={<PrivateRoute><Layout><MarketingOrganizationsList /></Layout></PrivateRoute>} />
           <Route path="/marketing-organizations/create" element={<PrivateRoute><Layout><MarketingOrganizationsCreate /></Layout></PrivateRoute>} />
           <Route path="/marketing-organizations/:id" element={<PrivateRoute><Layout><MarketingOrganizationsShow /></Layout></PrivateRoute>} />
-          <Route path="/marketing-organizations/:id/edit" element={<PrivateRoute><Layout><MarketingOrganizationsEdit /></Layout></PrivateRoute>} />
+          <Route path="/marketing-organizations/:id/edit" element={<PrivateRoute><Layout><MarketingOrganizationsEdit /></Layout></PrivateRoute>} /> */}
 
           <Route path="/users" element={<PrivateRoute><Layout><UsersList /></Layout></PrivateRoute>} />
           <Route path="/users/create" element={<PrivateRoute><Layout><UsersCreate /></Layout></PrivateRoute>} />

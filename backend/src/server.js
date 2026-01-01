@@ -18,9 +18,11 @@ import userRouter from './routes/users.js';
 import motherRouter from './routes/mothers.js';
 import fatherRouter from './routes/fathers.js';
 import siblingRouter from './routes/siblings.js';
-import sponsorOrgRouter from './routes/sponsor-organizations.js';
-import marketingOrgRouter from './routes/marketing-organizations.js';
+// import sponsorOrgRouter from './routes/sponsor-organizations.js';
+// import marketingOrgRouter from './routes/marketing-organizations.js';
+import organizationsRouter from './routes/organizations.js';
 import attachmentRouter from './routes/attachments.js';
+import settingsRouter from './routes/settings.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -28,7 +30,9 @@ const __dirname = path.dirname(__filename);
 const app = express();
 
 app.use(cors());
-app.use(helmet());
+app.use(helmet({
+  crossOriginResourcePolicy: false,
+}));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan('dev'));
@@ -55,9 +59,11 @@ app.use('/api/users', userRouter);
 app.use('/api/mothers', motherRouter);
 app.use('/api/fathers', fatherRouter);
 app.use('/api/siblings', siblingRouter);
-app.use('/api/sponsor-organizations', sponsorOrgRouter);
-app.use('/api/marketing-organizations', marketingOrgRouter);
+// app.use('/api/sponsor-organizations', sponsorOrgRouter);
+// app.use('/api/marketing-organizations', marketingOrgRouter);
+app.use('/api/organizations', organizationsRouter);
 app.use('/api/attachments', attachmentRouter);
+app.use('/api/settings', settingsRouter);
 
 app.use((req, res) => {
   res.status(404).json({ message: 'Not found' });
