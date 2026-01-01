@@ -10,7 +10,7 @@ export const config = {
     port: process.env.DB_PORT ? Number(process.env.DB_PORT) : 3306,
     user: process.env.DB_USER || 'root',
     password: process.env.DB_PASSWORD || '',
-    database: process.env.DB_NAME || 'orphans_db',
+    database: process.env.DB_NAME || 'yateem_pha',
     connectionLimit: process.env.DB_POOL ? Number(process.env.DB_POOL) : 10,
   },
   jwtSecret: process.env.JWT_SECRET || 'change-me-secret',
