@@ -29,7 +29,7 @@ const navItems = [
   { path: '/orphans', label: 'بيانات الأيتام' },
   { path: '/guardians', label: 'المعيلين' },
   { path: '/fathers', label: 'الآباء' },
-  { path: '/fathers', label: 'الآباء' },
+
   { path: '/organizations', label: 'الجهات' },
   //   { path: '/sponsor-organizations', label: 'الجهات الكافلة' },
   //   { path: '/marketing-organizations', label: 'جهات التسويق' },

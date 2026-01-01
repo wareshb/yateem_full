@@ -262,6 +262,11 @@ router.post('/', authenticate, async (req, res, next) => {
       }
     }
 
+    // [New Logic] Ensure Mother is Guardian if Custodian
+    if (mother_id && (mother_is_custodian !== false)) {
+      await ensureMotherIsGuardian(conn, mother_id);
+    }
+
     await conn.commit();
 
     res.status(201).json({
@@ -490,6 +495,30 @@ router.patch('/:id', authenticate, async (req, res, next) => {
       await query('UPDATE orphans SET mother_is_custodian = ? WHERE id = ?', [fields.mother_is_custodian, req.params.id]);
     }
 
+    // [New Logic] Check and Ensure Mother is Guardian
+    // We need to fetch the latest state to be sure
+    const [updatedOrphan] = await query('SELECT mother_id, mother_is_custodian FROM orphans WHERE id = ?', [req.params.id]);
+    if (updatedOrphan && updatedOrphan.mother_id && updatedOrphan.mother_is_custodian) {
+      // Create a temporary connection wrapper for the single-query style since we aren't in a transaction here (or modify logic to accept pool)
+      // Actually helper uses .query(), so passing the pool (or 'query' wrapper) directly might fail if it expects connection object logic
+      // My helper logic above uses `conn.query`. The `query` export is usually `pool.query` or snippet. 
+      // Let's obtain a connection or just assume the global `query` works if we wrap it to look like conn? 
+      // Actually `ensureMotherIsGuardian` uses `conn.query`. The default `query` export in ../db.js likely returns [rows] or just rows depending on driver.
+      // Looking at line 3: `import { query, getConnection } from '../db.js';`
+      // `query` usage: `const [result] = await query(...)` -> It returns [rows, fields] (mysql2 promise).
+      // `conn.query` usage: `const [result] = await conn.query(...)` -> same.
+
+      // So I can pass an object { query: query } as "conn" if I want to use the global pool, 
+      // OR I can get a fresh connection. 
+      // Getting a connection is safer.
+      const conn = await getConnection();
+      try {
+        await ensureMotherIsGuardian(conn, updatedOrphan.mother_id);
+      } finally {
+        conn.release();
+      }
+    }
+
     res.json({ message: 'تم التحديث بنجاح' });
   } catch (err) {
     next(err);
@@ -505,5 +534,54 @@ router.delete('/:id', authenticate, async (req, res, next) => {
     next(err);
   }
 });
+
+// Helper to sync Mother to Guardians
+const ensureMotherIsGuardian = async (conn, motherId) => {
+  if (!motherId) return;
+
+  // 1. Get Mother Details
+  const [mother] = await conn.query('SELECT * FROM mothers WHERE id = ?', [motherId]);
+  if (!mother) return;
+
+  // 2. Check if she already exists in guardians (by National ID or Name+Phone)
+  let existing = null;
+  if (mother.id_number) {
+    [existing] = await conn.query('SELECT id FROM guardians WHERE national_id = ?', [mother.id_number]);
+  } else if (mother.phone_1 && mother.full_name) {
+    [existing] = await conn.query('SELECT id FROM guardians WHERE contact_phone = ? AND full_name = ?', [mother.phone_1, mother.full_name]);
+  }
+
+  if (existing) {
+    // Optional: Update existing guardian? For now, we just ensure existence.
+    return existing.id;
+  }
+
+  // 3. Create Guardian
+  const guardianUid = uuidv4(); // We need uuid here, ensure it's imported or generate it
+  // Note: uuidv4 is imported at the top of file
+
+  // Map Mother fields to Guardian fields
+  // Guardian columns: full_name, date_of_birth, national_id, relationship_to_child, contact_phone, address, occupation, monthly_income, health_status, notes
+  const [res] = await conn.query(`
+      INSERT INTO guardians (
+        uid, full_name, date_of_birth, national_id, relationship_to_child, 
+        contact_phone, address, occupation, monthly_income, health_status, notes
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [
+    guardianUid,
+    mother.full_name,
+    mother.date_of_birth || null, // Assuming migration added this
+    mother.id_number,
+    'Mother',
+    mother.phone_1,
+    mother.address || null,
+    mother.occupation,
+    mother.monthly_income || null,
+    mother.health_status || null,
+    'Added automatically from Mother (Custodian)'
+  ]);
+
+  return res.insertId;
+};
 
 export default router;
