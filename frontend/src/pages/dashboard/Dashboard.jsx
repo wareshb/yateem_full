@@ -1,4 +1,4 @@
-import { mockStats } from '../data/mock';
+import { mockStats } from '../../data/mock';
 
 export default function Dashboard() {
   return (

@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import DateInput from '../components/DateInput';
+import { formatDateForDisplay, formatDateForServer } from '../utils/dateUtils';
 
 const API_URL = 'http://localhost:4000/api';
 
@@ -25,7 +27,7 @@ export default function MarketingOrganizations() {
     const [selectedOrphanIds, setSelectedOrphanIds] = useState([]);
     const [convertData, setConvertData] = useState({
         sponsorship_type: 'نقدية',
-        start_date: new Date().toISOString().split('T')[0],
+        start_date: formatDateForDisplay(new Date().toISOString().split('T')[0]),
         sponsored_orphan_ids: []
     });
 
@@ -67,14 +69,18 @@ export default function MarketingOrganizations() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            await axios.post(`${API_URL}/marketing-organizations`, formData);
+            const dataToSend = {
+                ...formData,
+                marketing_date: formatDateForServer(formData.marketing_date)
+            };
+            await axios.post(`${API_URL}/marketing-organizations`, dataToSend);
             alert('تم إضافة جهة التسويق بنجاح');
             setFormData({
                 name: '',
                 email: '',
                 phone: '',
                 responsible_person: '',
-                marketing_date: new Date().toISOString().split('T')[0],
+                marketing_date: formatDateForDisplay(new Date().toISOString().split('T')[0]),
                 notes: ''
             });
             setShowAddForm(false);
@@ -115,7 +121,11 @@ export default function MarketingOrganizations() {
         }
 
         try {
-            await axios.post(`${API_URL}/marketing-organizations/${selectedOrg}/convert-to-sponsor`, convertData);
+            const dataToSend = {
+                ...convertData,
+                start_date: formatDateForServer(convertData.start_date)
+            };
+            await axios.post(`${API_URL}/marketing-organizations/${selectedOrg}/convert-to-sponsor`, dataToSend);
             alert('تم التحويل إلى جهة كافلة بنجاح');
             setShowConvertForm(false);
             fetchOrganizations();
@@ -159,7 +169,7 @@ export default function MarketingOrganizations() {
                         <Input label="البريد الإلكتروني" type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
                         <Input label="رقم الهاتف" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} />
                         <Input label="المسؤول عن قطاع الأيتام" value={formData.responsible_person} onChange={(e) => setFormData({ ...formData, responsible_person: e.target.value })} />
-                        <Input label="تاريخ التسويق" type="date" value={formData.marketing_date} onChange={(e) => setFormData({ ...formData, marketing_date: e.target.value })} />
+                        <DateInput label="تاريخ التسويق" value={formData.marketing_date} onChange={(e) => setFormData({ ...formData, marketing_date: e.target.value })} />
                         <div className="input" style={{ gridColumn: '1/-1' }}>
                             <label>ملاحظات</label>
                             <textarea value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} rows={3} />
@@ -290,9 +300,8 @@ export default function MarketingOrganizations() {
                             <option value="دراسية">دراسية</option>
                             <option value="صحية">صحية</option>
                         </Input>
-                        <Input
+                        <DateInput
                             label="تاريخ بدء الكفالة"
-                            type="date"
                             value={convertData.start_date}
                             onChange={(e) => setConvertData({ ...convertData, start_date: e.target.value })}
                         />

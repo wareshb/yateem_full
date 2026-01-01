@@ -1,4 +1,5 @@
 import { mockVisits } from '../data/mock';
+import DateInput from '../components/DateInput';
 
 export default function Visits() {
   return (
@@ -38,7 +39,7 @@ export default function Visits() {
         </div>
         <div className="form-grid">
           <Input label="اليتيم" placeholder="اسم اليتيم" />
-          <Input label="تاريخ الزيارة" type="date" />
+          <DateInput label="تاريخ الزيارة" />
           <Input label="تقييم الوضع" type="number" placeholder="من 1 إلى 10" />
           <div className="input" style={{ gridColumn: '1/-1' }}>
             <label>تقرير الزيارة</label>

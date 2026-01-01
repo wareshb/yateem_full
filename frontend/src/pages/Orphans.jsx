@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import DateInput from '../components/DateInput';
+import { formatDateForDisplay, formatDateForServer } from '../utils/dateUtils';
 
 const API_URL = 'http://localhost:4000/api';
 
@@ -28,7 +30,22 @@ export default function Orphans() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post(`${API_URL}/orphans`, formData);
+      // تحويل التواريخ من dd/mm/yyyy إلى yyyy-mm-dd قبل الإرسال
+      const dataToSend = {
+        ...formData,
+        date_of_birth: formatDateForServer(formData.date_of_birth),
+        father_data: {
+          ...formData.father_data,
+          date_of_birth: formatDateForServer(formData.father_data?.date_of_birth),
+          date_of_death: formatDateForServer(formData.father_data?.date_of_death)
+        },
+        siblings: formData.siblings?.map(sib => ({
+          ...sib,
+          date_of_birth: formatDateForServer(sib.date_of_birth)
+        }))
+      };
+
+      await axios.post(`${API_URL}/orphans`, dataToSend);
       alert('تم إضافة اليتيم بنجاح');
       setFormData(getEmptyForm());
       setShowForm(false);
@@ -89,9 +106,8 @@ export default function Orphans() {
           <form onSubmit={handleSubmit}>
             {/* البيانات الشخصية */}
             <Section title="البيانات الشخصية">
-              <Input label="معرف اليتيم" value={formData.orphan_id} onChange={(e) => setFormData({ ...formData, orphan_id: e.target.value })} />
               <Input label="الاسم الكامل" value={formData.full_name} onChange={(e) => setFormData({ ...formData, full_name: e.target.value })} required />
-              <Input label="تاريخ الميلاد" type="date" value={formData.date_of_birth} onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })} />
+              <DateInput label="تاريخ الميلاد" value={formData.date_of_birth} onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })} />
               <Select label="الجنس" value={formData.gender} onChange={(e) => setFormData({ ...formData, gender: e.target.value })}>
                 <option value="male">ذكر</option>
                 <option value="female">أنثى</option>
@@ -188,8 +204,8 @@ export default function Orphans() {
             {/* بيانات الأب */}
             <Section title="بيانات والد اليتيم">
               <Input label="اسم الأب الكامل" value={formData.father_data?.full_name} onChange={(e) => setFormData({ ...formData, father_data: { ...formData.father_data, full_name: e.target.value } })} />
-              <Input label="تاريخ ميلاد الأب" type="date" value={formData.father_data?.date_of_birth} onChange={(e) => setFormData({ ...formData, father_data: { ...formData.father_data, date_of_birth: e.target.value } })} />
-              <Input label="تاريخ الوفاة" type="date" value={formData.father_data?.date_of_death} onChange={(e) => setFormData({ ...formData, father_data: { ...formData.father_data, date_of_death: e.target.value } })} />
+              <DateInput label="تاريخ ميلاد الأب" value={formData.father_data?.date_of_birth} onChange={(e) => setFormData({ ...formData, father_data: { ...formData.father_data, date_of_birth: e.target.value } })} />
+              <DateInput label="تاريخ الوفاة" value={formData.father_data?.date_of_death} onChange={(e) => setFormData({ ...formData, father_data: { ...formData.father_data, date_of_death: e.target.value } })} />
               <Input label="سبب الوفاة" value={formData.father_data?.cause_of_death} onChange={(e) => setFormData({ ...formData, father_data: { ...formData.father_data, cause_of_death: e.target.value } })} />
               <Select label="نوع شهادة الوفاة" value={formData.father_data?.death_certificate_type} onChange={(e) => setFormData({ ...formData, father_data: { ...formData.father_data, death_certificate_type: e.target.value } })}>
                 <option value="مدنية">مدنية</option>
@@ -248,7 +264,7 @@ export default function Orphans() {
                   </div>
                   <div className="form-grid">
                     <Input label="الاسم" value={sibling.full_name} onChange={(e) => updateSibling(index, 'full_name', e.target.value)} />
-                    <Input label="تاريخ الميلاد" type="date" value={sibling.date_of_birth} onChange={(e) => updateSibling(index, 'date_of_birth', e.target.value)} />
+                    <DateInput label="تاريخ الميلاد" value={sibling.date_of_birth} onChange={(e) => updateSibling(index, 'date_of_birth', e.target.value)} />
                     <Select label="الجنس" value={sibling.gender} onChange={(e) => updateSibling(index, 'gender', e.target.value)}>
                       <option value="male">ذكر</option>
                       <option value="female">أنثى</option>
@@ -363,11 +379,11 @@ export default function Orphans() {
               <DetailItem label="المحافظة" value={viewDetails.residence_province} />
               <DetailItem label="المديرية" value={viewDetails.residence_district} />
               <DetailItem label="الحي" value={viewDetails.neighborhood_or_street} />
-              <DetailItem label="الحالة" value={viewDetails.residence_condition} />
+              <DetailItem label="حالة السكن" value={viewDetails.residence_condition} />
             </DetailSection>
 
             <DetailSection title="الحالة الصحية">
-              <DetailItem label="الحالة" value={viewDetails.health_condition} />
+              <DetailItem label="الحالة الصحية" value={viewDetails.health_condition} />
               {viewDetails.illness_type && <DetailItem label="النوع" value={viewDetails.illness_type} />}
               {viewDetails.illness_notes && <DetailItem label="ملاحظات" value={viewDetails.illness_notes} />}
             </DetailSection>
@@ -507,7 +523,6 @@ function DetailItem({ label, value }) {
 
 function getEmptyForm() {
   return {
-    orphan_id: '',
     full_name: '',
     date_of_birth: '',
     gender: 'male',
